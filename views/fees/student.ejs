@@ -1,0 +1,159 @@
+<% layout('layout') -%>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2 text-primary">
+    <i class="bi bi-currency-dollar me-2"></i>Fee History
+  </h1>
+  <a href="/fees" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left me-2"></i>Back to Fees
+  </a>
+</div>
+
+<!-- Student Info Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h3 class="text-primary mb-1"><%= student.name %></h3>
+        <p class="text-muted mb-0">
+          <span class="badge bg-light text-dark me-2">Class: <%= student.class %></span>
+          <span class="badge bg-primary">Roll No: <%= student.roll_no %></span>
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <div class="d-flex justify-content-md-end gap-3 mt-2 mt-md-0">
+          <% 
+            const totalAmount = feeRecords.reduce((sum, record) => sum + parseFloat(record.amount), 0);
+            const paidAmount = feeRecords.filter(record => record.status === 'Paid')
+              .reduce((sum, record) => sum + parseFloat(record.amount), 0);
+            const pendingAmount = totalAmount - paidAmount;
+          %>
+          <div class="text-center">
+            <div class="h4 text-success mb-0">₹<%= paidAmount.toLocaleString() %></div>
+            <small class="text-muted">Paid</small>
+          </div>
+          <div class="text-center">
+            <div class="h4 text-danger mb-0">₹<%= pendingAmount.toLocaleString() %></div>
+            <small class="text-muted">Pending</small>
+          </div>
+          <div class="text-center">
+            <div class="h4 text-primary mb-0">₹<%= totalAmount.toLocaleString() %></div>
+            <small class="text-muted">Total</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fee Records -->
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-header bg-white border-0 pt-4">
+    <h5 class="mb-0">Fee Records</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="border-0">Amount</th>
+            <th class="border-0">Status</th>
+            <th class="border-0">Payment Date</th>
+            <th class="border-0">Recorded By</th>
+            <th class="border-0">Date Created</th>
+            <th class="border-0">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (feeRecords && feeRecords.length > 0) { %>
+            <% feeRecords.forEach(record => { %>
+              <tr>
+                <td class="fw-bold">₹<%= record.amount %></td>
+                <td>
+                  <span class="badge <%= record.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark' %>">
+                    <i class="bi <%= record.status === 'Paid' ? 'bi-check-circle' : 'bi-clock' %> me-1"></i>
+                    <%= record.status %>
+                  </span>
+                </td>
+                <td>
+                  <% if (record.payment_date) { %>
+                    <%= new Date(record.payment_date).toLocaleDateString('en-US', { 
+                      weekday: 'short', 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    }) %>
+                  <% } else { %>
+                    <span class="text-muted">-</span>
+                  <% } %>
+                </td>
+                <td>
+                  <span class="text-muted">
+                    <i class="bi bi-person me-1"></i>
+                    <%= record.teachers ? record.teachers.name : 'Unknown' %>
+                  </span>
+                </td>
+                <td>
+                  <small class="text-muted">
+                    <%= new Date(record.created_at).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    }) %>
+                  </small>
+                </td>
+                <td>
+                  <% if (record.status === 'Pending') { %>
+                    <button class="btn btn-sm btn-success" onclick="markAsPaid('<%= record.id %>')">
+                      <i class="bi bi-check-circle me-1"></i>Mark Paid
+                    </button>
+                  <% } else { %>
+                    <span class="text-success">
+                      <i class="bi bi-check-circle me-1"></i>Completed
+                    </span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="6" class="text-center text-muted py-4">
+                <i class="bi bi-receipt display-4 d-block mb-2"></i>
+                No fee records found for this student.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+async function markAsPaid(feeId) {
+  if (confirm('Mark this fee as paid?')) {
+    try {
+      const response = await fetch(`/fees/update/${feeId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'Paid',
+          payment_date: new Date().toISOString().split('T')[0]
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        location.reload();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      alert('An error occurred while updating the fee status');
+    }
+  }
+}
+</script>

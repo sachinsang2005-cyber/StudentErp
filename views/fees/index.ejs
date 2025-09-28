@@ -1,0 +1,205 @@
+<% layout('layout') -%>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+  <h1 class="h2 text-primary">
+    <i class="bi bi-currency-dollar me-2"></i>Fees Management
+  </h1>
+  <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addFeeModal">
+    <i class="bi bi-plus-circle me-2"></i>Add Fee Record
+  </button>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="border-0">Roll No</th>
+            <th class="border-0">Name</th>
+            <th class="border-0">Class</th>
+            <th class="border-0">Amount</th>
+            <th class="border-0">Status</th>
+            <th class="border-0">Payment Date</th>
+            <th class="border-0">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (students && students.length > 0) { %>
+            <% students.forEach(student => { %>
+              <tr>
+                <td class="fw-bold text-primary"><%= student.roll_no %></td>
+                <td><%= student.name %></td>
+                <td>
+                  <span class="badge bg-light text-dark"><%= student.class %></span>
+                </td>
+                <td>
+                  <% if (student.latestFee) { %>
+                    <span class="fw-bold">₹<%= student.latestFee.amount %></span>
+                  <% } else { %>
+                    <span class="text-muted">-</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (student.latestFee) { %>
+                    <span class="badge <%= student.latestFee.status === 'Paid' ? 'bg-success' : 'bg-warning text-dark' %>">
+                      <i class="bi <%= student.latestFee.status === 'Paid' ? 'bi-check-circle' : 'bi-clock' %> me-1"></i>
+                      <%= student.latestFee.status %>
+                    </span>
+                  <% } else { %>
+                    <span class="badge bg-secondary">No Record</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (student.latestFee && student.latestFee.payment_date) { %>
+                    <%= new Date(student.latestFee.payment_date).toLocaleDateString() %>
+                  <% } else { %>
+                    <span class="text-muted">-</span>
+                  <% } %>
+                </td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <% if (student.latestFee && student.latestFee.status === 'Pending') { %>
+                      <button class="btn btn-sm btn-success" onclick="markAsPaid('<%= student.latestFee.id %>')">
+                        <i class="bi bi-check-circle"></i>
+                      </button>
+                    <% } %>
+                    <a href="/fees/student/<%= student.id %>" class="btn btn-sm btn-outline-info">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-4">
+                <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                No students found. Add students first to manage fees.
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Fee Record Modal -->
+<div class="modal fade" id="addFeeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0">
+      <div class="modal-header bg-success text-white rounded-top-4">
+        <h5 class="modal-title">
+          <i class="bi bi-plus-circle me-2"></i>Add Fee Record
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="addFeeForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="student_id" class="form-label">Student</label>
+            <select class="form-select" id="student_id" name="student_id" required>
+              <option value="">Select a student</option>
+              <% students.forEach(student => { %>
+                <option value="<%= student.id %>">
+                  <%= student.roll_no %> - <%= student.name %> (<%= student.class %>)
+                </option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="amount" class="form-label">Amount (₹)</label>
+            <input type="number" class="form-control" id="amount" name="amount" step="0.01" required>
+          </div>
+          <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status" required onchange="togglePaymentDate()">
+              <option value="Pending">Pending</option>
+              <option value="Paid">Paid</option>
+            </select>
+          </div>
+          <div class="mb-3" id="paymentDateGroup" style="display: none;">
+            <label for="payment_date" class="form-label">Payment Date</label>
+            <input type="date" class="form-control" id="payment_date" name="payment_date">
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Add Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePaymentDate() {
+  const status = document.getElementById('status').value;
+  const paymentDateGroup = document.getElementById('paymentDateGroup');
+  const paymentDateInput = document.getElementById('payment_date');
+  
+  if (status === 'Paid') {
+    paymentDateGroup.style.display = 'block';
+    paymentDateInput.value = new Date().toISOString().split('T')[0];
+  } else {
+    paymentDateGroup.style.display = 'none';
+    paymentDateInput.value = '';
+  }
+}
+
+document.getElementById('addFeeForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const data = Object.fromEntries(formData);
+  
+  try {
+    const response = await fetch('/fees/record', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+    
+    if (result.success) {
+      alert('Fee record added successfully!');
+      location.reload();
+    } else {
+      alert('Error: ' + result.error);
+    }
+  } catch (error) {
+    alert('An error occurred while adding the fee record');
+  }
+});
+
+async function markAsPaid(feeId) {
+  if (confirm('Mark this fee as paid?')) {
+    try {
+      const response = await fetch(`/fees/update/${feeId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'Paid',
+          payment_date: new Date().toISOString().split('T')[0]
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        location.reload();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      alert('An error occurred while updating the fee status');
+    }
+  }
+}
+</script>
