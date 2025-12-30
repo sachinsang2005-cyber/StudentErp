@@ -3,7 +3,7 @@
 A full-stack **Student ERP (Enterprise Resource Planning) Web Application** built using **Node.js, Express.js, and EJS**.  
 This project provides a simple academic management system with user navigation, dynamic views, and server-side rendering.
 
----
+--
 
 ## 🛠️ Technologies Used
 
