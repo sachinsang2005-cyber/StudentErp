@@ -5,7 +5,7 @@ This project provides a simple academic management system with user navigation, 
 
 --
 
-## 🛠️ Technologies Used
+# Technologies Used
 
 - **Node.js** – JavaScript runtime for backend logic  
 - **Express.js** – Web framework for handling routes and APIs  
@@ -15,7 +15,7 @@ This project provides a simple academic management system with user navigation, 
 
 ---
 
-## 📌 Features
+# Features
 
 - Server-rendered views with EJS templates  
 - Clean UI for navigating between pages  
@@ -23,7 +23,4 @@ This project provides a simple academic management system with user navigation, 
 - Static file serving with routing using Express.js  
 - Structured backend that separates routes and views  
 
----
-
-## 🚀 Project Structure
 
